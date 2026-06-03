@@ -195,9 +195,9 @@ void textEditor(const char* filename) {
   }
 
   int filenameLen = strlen(filename);
-  char separator[filenameLen + 6];
-  for (uint8_t i = 0; i < filenameLen + 8; i++) {
-    separator[i] = '-';
+  char separator[filenameLen + 8];
+  for (uint8_t j = 0; j < filenameLen + 8; j++) {
+    separator[j] = '-';
   }
 
 
