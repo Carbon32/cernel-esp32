@@ -1,32 +1,20 @@
-# Arduino IDE
-*.o
-*.a
-*.so
-*.so.*
-*.elf
-*.hex
-*.bin
+*.out
+*.exe
+*.test
+*.wasm
 build/
 dist/
-
-# Dependencies
-lib/
-libraries/
-
-# IDE
+go.work
+go.work.sum
+.env
+.env.*
+!.env.example
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 .DS_Store
-
-# Build artifacts
-*.o
-*.obj
-*.su
-*.gch
-*.elf
-
-# arduino-cli
-.arduino/
+Thumbs.db
+*.log
+tmp/
+temp/
