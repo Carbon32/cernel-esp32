@@ -1,3 +1,4 @@
 #!/bin/bash
 
-tinygo monitor
+# Change this to python3 if your system needs that
+python cerial.py

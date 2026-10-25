@@ -3,6 +3,7 @@ package core
 import (
 	"esp32/command"
 	"esp32/led"
+	"esp32/system"
 	"fmt"
 	"machine"
 	"time"
@@ -21,13 +22,16 @@ var (
 func Init() {
 	led.InitLED()
 
-	fmt.Println("\nCernel is running`")
-	fmt.Print("> ")
+	fmt.Println("\nCernel is running")
 
 	var line [maxLineLength]byte
 	length := 0
 
 	for {
+		if system.StartReboot {
+			break
+		}
+
 		if machine.Serial.Buffered() == 0 {
 			time.Sleep(5 * time.Millisecond)
 			continue
@@ -47,8 +51,6 @@ func Init() {
 				length = 0
 			}
 
-			fmt.Print("> ")
-
 		case 8, 127: // Backspace
 			if length > 0 {
 				length--
@@ -57,8 +59,6 @@ func Init() {
 
 		case 3: // Ctrl + C
 			length = 0
-			fmt.Println("^C")
-			fmt.Print("> ")
 
 		default:
 			if c >= 32 && c < 127 && length < len(line) {

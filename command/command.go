@@ -2,6 +2,7 @@ package command
 
 import (
 	"esp32/led"
+	"esp32/system"
 	"esp32/wifi"
 	"fmt"
 	"strings"
@@ -34,9 +35,16 @@ func ExecuteCommand(link *esplink.Esplink, input string) {
 		fmt.Println("	- help: you are here.")
 		fmt.Println("	- print <text>: print text.")
 		fmt.Println("	- history: show command history")
-		fmt.Println("	- led on/off: control built-in LED")
 		fmt.Println("	- version: show version.")
+
+		fmt.Println("	- led: control built-in LED")
 		fmt.Println("	- wifi: run WiFi-related commands.")
+
+		fmt.Println("	- uptime: see for how much time your system ran.")
+		fmt.Println("	- mem: check system memory.")
+		fmt.Println("	- cpu: check CPU frequency.")
+
+		fmt.Println("	- reboot: restart the system.")
 
 	case "print":
 		var str string = strings.Join(args, " ")
@@ -62,6 +70,18 @@ func ExecuteCommand(link *esplink.Esplink, input string) {
 
 	case "wifi":
 		wifi.HandleWiFi(link, args)
+
+	case "cpu":
+		system.CPU()
+
+	case "mem":
+		system.Mem()
+
+	case "uptime":
+		system.Uptime()
+
+	case "reboot":
+		system.Reboot()
 
 	default:
 		fmt.Println("Unknown command:", command)
