@@ -2,6 +2,7 @@ package wifi
 
 import (
 	"fmt"
+	"strings"
 
 	nl "tinygo.org/x/drivers/netlink"
 	esplink "tinygo.org/x/espradio/netlink"
@@ -13,6 +14,7 @@ type WiFiConfig struct {
 }
 
 var defaultConfig = NewWiFiConfig("", "")
+var connected bool = false
 
 func NewWiFiConfig(SSID string, password string) *WiFiConfig {
 	return &WiFiConfig{
@@ -23,11 +25,11 @@ func NewWiFiConfig(SSID string, password string) *WiFiConfig {
 
 func HandleWiFi(link *esplink.Esplink, args []string) {
 	if len(args) < 1 {
-		fmt.Println("Usage: wifi <show/connect/set>")
+		fmt.Println("Usage: wifi <show/connect/disconnect/set>")
 		return
 	}
 
-	switch args[0] {
+	switch strings.ToLower(args[0]) {
 	case "show":
 		if len(args) != 1 {
 			fmt.Println("Usage: wifi show takes no arguments")
@@ -42,6 +44,13 @@ func HandleWiFi(link *esplink.Esplink, args []string) {
 		}
 		connectWiFi(link, defaultConfig)
 
+	case "disconnect":
+		if len(args) != 1 {
+			fmt.Println("Usage: wifi disconnect takes no arguments")
+			return
+		}
+		disconnectWiFi(link)
+
 	case "set":
 		if len(args) != 3 {
 			fmt.Println("Usage: wifi set <SSID> <password>")
@@ -52,11 +61,16 @@ func HandleWiFi(link *esplink.Esplink, args []string) {
 		fmt.Println("WiFi set to:", args[1])
 
 	default:
-		fmt.Println("Usage: wifi <show/connect/set>")
+		fmt.Println("Usage: wifi <show/connect/disconnect/set>")
 	}
 }
 
 func connectWiFi(link *esplink.Esplink, config *WiFiConfig) {
+	if connected {
+		fmt.Println("You are already connected to a network, disconnect first")
+		return
+	}
+
 	err := link.NetConnect(&nl.ConnectParams{
 		Ssid:       config.wifiSSID,
 		Passphrase: config.wifiPassword,
@@ -74,6 +88,17 @@ func connectWiFi(link *esplink.Esplink, config *WiFiConfig) {
 	}
 
 	fmt.Println("Wi-Fi connected. IP set to:", address.String())
+	connected = true
+}
+
+func disconnectWiFi(link *esplink.Esplink) {
+	if !connected {
+		fmt.Println("No WiFi connection detected")
+	}
+
+	link.NetDisconnect()
+	fmt.Println("Disconnected from network")
+	connected = false
 }
 
 func getWiFiInformation(link *esplink.Esplink) {
@@ -83,7 +108,7 @@ func getWiFiInformation(link *esplink.Esplink) {
 		return
 	}
 
-	if address.String() == "0.0.0.0" {
+	if !connected {
 		fmt.Println("Not connected to any network")
 	} else {
 		fmt.Println("Wi-Fi IP:", address.String())

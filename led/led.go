@@ -3,6 +3,7 @@ package led
 import (
 	"fmt"
 	"machine"
+	"strings"
 )
 
 func InitLED() {
@@ -15,7 +16,7 @@ func HandleLED(args []string) {
 		return
 	}
 
-	switch args[0] {
+	switch strings.ToLower(args[0]) {
 	case "on":
 		if machine.LED.Get() {
 			fmt.Println("LED is already on")
