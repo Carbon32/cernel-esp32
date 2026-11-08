@@ -1,0 +1,66 @@
+enum TokenType
+{
+    LEFT_PAREN,
+    RIGHT_PAREN,
+    LEFT_BRACE,
+    RIGHT_BRACE,
+    LEFT_BRACKET,
+    RIGHT_BRACKET,
+    COMMA,
+    DOT,
+    MINUS,
+    PLUS,
+    SEMICOLON,
+    SLASH,
+    STAR,
+    COLON,
+    QUESTION,
+
+    BANG,
+    BANG_EQUAL,
+    EQUAL,
+    EQUAL_EQUAL,
+    GREATER,
+    GREATER_EQUAL,
+    LESS,
+    LESS_EQUAL,
+
+    PERCENT,
+
+    PLUS_EQUAL,
+    MINUS_EQUAL,
+    STAR_EQUAL,
+    SLASH_EQUAL,
+    PERCENT_EQUAL,
+
+    STAR_STAR,
+    STAR_STAR_EQUAL,
+    PLUS_PLUS,
+    MINUS_MINUS,
+
+    IDENTIFIER,
+    STRING,
+    NUMBER,
+
+    AND,
+    CLASS,
+    ELSE,
+    FALSE,
+    FUNCTION,
+    FOR,
+    IF,
+    NULL,
+    OR,
+    RETURN,
+    SUPER,
+    THIS,
+    TRUE,
+    VAR,
+    WHILE,
+    CONST,
+
+    PUBLIC,
+    PRIVATE,
+
+    END_OF_FILE
+};
