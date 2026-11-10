@@ -1,4 +1,6 @@
 #include "shell.h"
+#include "driver/uart.h"
+#include "freertos/FreeRTOS.h"
 #include "led.h"
 
 char history[HISTORY_SIZE][C_MAX_INPUT] = {0};
@@ -11,12 +13,60 @@ void add_entry(const char *input) {
   history_counter = (history_counter + 1) % HISTORY_SIZE;
 }
 
+static const char *skip_spaces(const char *cursor) {
+  while (*cursor == ' ' || *cursor == '\t') {
+    cursor++;
+  }
+  return cursor;
+}
+
+static bool consume_word(const char **cursor, const char *word) {
+  const size_t length = strlen(word);
+  if (strncmp(*cursor, word, length) != 0 ||
+      ((*cursor)[length] != '\0' && (*cursor)[length] != ' ' &&
+       (*cursor)[length] != '\t')) {
+    return false;
+  }
+  *cursor = skip_spaces(*cursor + length);
+  return true;
+}
+
+static bool extract_wifi_value(const char *input, const char *field,
+                               char *value, size_t capacity) {
+  const char *cursor = skip_spaces(input);
+  if (!consume_word(&cursor, "wifi") || !consume_word(&cursor, "set") ||
+      !consume_word(&cursor, field)) {
+    return false;
+  }
+
+  const char *start = cursor;
+  const char *end = NULL;
+  if (*start == '"') {
+    start++;
+    end = strchr(start, '"');
+    if (end == NULL || *skip_spaces(end + 1) != '\0') {
+      return false;
+    }
+  } else {
+    end = start + strlen(start);
+    while (end > start && (end[-1] == ' ' || end[-1] == '\t')) {
+      end--;
+    }
+  }
+
+  const size_t length = (size_t)(end - start);
+  if (length >= capacity) {
+    return false;
+  }
+  memcpy(value, start, length);
+  value[length] = '\0';
+  return true;
+}
+
 void process_command(const char *input) {
   if (input == NULL || input[0] == '\0') {
     return;
   }
-
-  add_entry(input);
 
   char buffer[C_MAX_INPUT];
 
@@ -37,6 +87,19 @@ void process_command(const char *input) {
 
   if (argc == 0) {
     return;
+  }
+
+  for (int i = 0; i < argc && i < 3; i++) {
+    for (size_t j = 0; argv[i][j]; j++) {
+      argv[i][j] = tolower((unsigned char)argv[i][j]);
+    }
+  }
+
+  if (strcmp(argv[0], "wifi") == 0 && argc >= 3 &&
+      strcmp(argv[1], "set") == 0 && strcmp(argv[2], "password") == 0) {
+    add_entry("wifi set password <hidden>");
+  } else {
+    add_entry(input);
   }
 
   for (size_t i = 0; argv[0][i]; i++) {
@@ -68,7 +131,47 @@ void process_command(const char *input) {
   }
 
   else if (strcmp(command, "wifi") == 0) {
-    printf("To be implemented\n");
+    if (argc == 1 && script_server_is_connected()) {
+      printf("Carblang upload server listening on %s:3333\n",
+             script_server_ip());
+      printf("Send a compiled .crbc file with tools/send_script.py\n");
+    }
+
+    else if (argc == 1) {
+      printf("WiFi is not connected. Set SSID and password, then run \"wifi "
+             "connect\".\n");
+    } else if (argc >= 3 && strcmp(argv[1], "set") == 0 &&
+               strcmp(argv[2], "ssid") == 0) {
+      char ssid[33];
+      if (!extract_wifi_value(input, "ssid", ssid, sizeof(ssid)) ||
+          !carblang_wifi_set_ssid(ssid)) {
+        printf("Could not save SSID. Use: wifi set ssid <name>\n");
+      } else {
+        printf("WiFi SSID saved.\n");
+      }
+    } else if (argc >= 3 && strcmp(argv[1], "set") == 0 &&
+               strcmp(argv[2], "password") == 0) {
+      char password[65];
+      if (!extract_wifi_value(input, "password", password, sizeof(password)) ||
+          !carblang_wifi_set_password(password)) {
+        printf("Could not save password. Use: wifi set password <password>\n");
+      } else {
+        printf("WiFi password saved.\n");
+      }
+    } else if (argc == 2 && strcmp(argv[1], "connect") == 0) {
+      if (carblang_wifi_connect()) {
+        printf("Connecting to WiFi; use \"wifi\" to check the IP address.\n");
+      } else {
+        printf("Could not start WiFi. Set the SSID and password first.\n");
+      }
+    } else {
+      printf("Use: wifi | wifi set ssid <name> | wifi set password <password> "
+             "| wifi connect\n");
+    }
+  }
+
+  else if (strcmp(command, "carblang") == 0) {
+    carblang_repl();
   }
 
   else if (strcmp(command, "bluetooth") == 0) {
@@ -102,10 +205,11 @@ bool read_line(char *buffer, size_t size) {
   size_t length = 0;
 
   while (1) {
-    int ch = getchar();
-    if (ch == EOF) {
+    uint8_t input_byte;
+    if (uart_read_bytes(UART_NUM_0, &input_byte, 1, portMAX_DELAY) != 1) {
       return false;
     }
+    int ch = input_byte;
 
     if (skip_lf && ch == '\n') {
       skip_lf = false;
@@ -118,27 +222,26 @@ bool read_line(char *buffer, size_t size) {
         skip_lf = true;
       }
       buffer[length] = '\0';
-      printf("\r\n");
+      uart_write_bytes(UART_NUM_0, "\r\n", 2);
       return true;
     }
 
     if ((ch == '\b' || ch == 127) && length > 0) {
       length--;
-      printf("\b \b");
+      uart_write_bytes(UART_NUM_0, "\b \b", 3);
     } else if (ch >= 32 && ch <= 126 && length < size - 1) {
       buffer[length++] = (char)ch;
-      putchar(ch);
+      const char echo = (char)ch;
+      uart_write_bytes(UART_NUM_0, &echo, 1);
     }
-
-    fflush(stdout);
   }
 }
 
 void shell_loop() {
   char input[C_MAX_INPUT];
   while (1) {
-    printf("cernel@cernel> ");
-    fflush(stdout);
+    const char prompt[] = "cernel@cernel> ";
+    uart_write_bytes(UART_NUM_0, prompt, sizeof(prompt) - 1);
     if (!read_line(input, sizeof(input))) {
       printf("Input read failed\n");
       continue;
@@ -146,4 +249,10 @@ void shell_loop() {
 
     process_command(input);
   }
+}
+
+void shell_redraw_prompt(void) {
+  uart_write_bytes(UART_NUM_0, "\r\n", 2);
+  const char prompt[] = "cernel@cernel> ";
+  uart_write_bytes(UART_NUM_0, prompt, sizeof(prompt) - 1);
 }

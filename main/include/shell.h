@@ -5,9 +5,8 @@
 
 /*
 
-    This shell will be turned into something more advanced, something that uses some sort
-    of a programming language to get things done but I'm still unsure of how I am going
-    to do it, for now, I will stick to keeping everything simple
+   There we go, Carblang now functions here. I will see how I can tinker around with it and make it more
+   useful. Maybe add more fancy stuff, who knows.
     
 */
 
@@ -26,6 +25,23 @@ void process_command(const char *);
 bool read_line(char *, size_t);
 void shell_loop();
 
+// This mix of C and C++ is too much sometimes
+#ifdef __cplusplus
+    extern "C" void shell_redraw_prompt(void);
+#else
+    void shell_redraw_prompt(void);
+#endif
+
 void help_cmd();
 void history_cmd();
 void print_cmd(int8_t, char *[]);
+
+void carblang_repl(void);
+
+void start_script_server(void);
+bool script_server_is_connected(void);
+const char *script_server_ip(void);
+
+bool carblang_wifi_set_ssid(const char *ssid);
+bool carblang_wifi_set_password(const char *password);
+bool carblang_wifi_connect(void);

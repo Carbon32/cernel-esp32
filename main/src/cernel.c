@@ -21,5 +21,6 @@ void app_main(void) {
   uart_vfs_dev_use_driver(UART_NUM_0);
   setvbuf(stdin, NULL, _IONBF, 0);
 
+  start_script_server();
   shell_loop();
 }

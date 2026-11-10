@@ -2,3 +2,5 @@
 build
 sdkconfig
 sdkconfig.old
+__pycache__
+*.crbc

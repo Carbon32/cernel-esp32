@@ -3,6 +3,13 @@
 void help_cmd() {
   printf("Available commands: \n");
   printf("help: \tshow available commands\n");
+  printf("print: \tdisplay some text\n");
+  printf("version: \tdipslay cernel version\n");
+  printf("carblang: \tstart the Carblang interactive prompt\n");
+  printf("wifi: \tshow WiFi status\n");
+  printf("wifi set ssid <name>: \tset WiFi SSID\n");
+  printf("wifi set password <password>: \tset WiFi password\n");
+  printf("wifi connect: \tconnect and start the script server\n");
 }
 
 void history_cmd() {
