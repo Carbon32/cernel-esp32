@@ -1,0 +1,41 @@
+println("pow(4, 6) = " + math.pow(4, 6)); // 4 power of 6 = 4096
+println("sqrt(49) = " + math.sqrt(49)); // 7
+println("fact(5) = " + math.fact(5)); // 120
+println("floor(3.7) = " + math.floor(3.7)); // 3
+println("ceil(3.2) = " + math.ceil(3.2)); // 4
+println("abs(-12.5) = " + math.abs(-12.5)); // 12.5
+
+println("log(2.718281828) = " + math.round(math.log(2.718281828))); // 1
+println("log10(1000) = " + math.log10(1000)); // 3
+println("log2(8) = " + math.log2(8)); // 3
+
+println("max(1, 5, 3, 9) = " + math.max(1, 5, 3, 9)); // 9
+println("min(1, 5, 3, 9) = " + math.min(1, 5, 3, 9)); // 1
+println("average(1, 2, 3, 4) = " + math.average(1, 2, 3, 4)); // 2.5
+
+println("sin(radians(30)) = " + math.round(math.sin(math.radians(30)))); // 0.5
+println("cos(radians(60)) = " + math.round(math.cos(math.radians(60)))); // 0.5
+println("tan(radians(45)) = " + math.round(math.tan(math.radians(45)))); // 1
+
+println("asin(0.5) = " + math.precision(math.asin(0.5), 6)); // 0.523598
+println("acos(0.5) = " + math.precision(math.acos(0.5), 6)); // 1.047197
+println("atan(1) = " + math.precision(math.atan(1), 6)); // 0.785398
+
+println("degrees(pi/2) = " + math.degrees(math.pi() / 2)); // 90
+println("radians(180) = " + math.precision(math.radians(180), 7)); // 3.1415926
+
+println("is_odd(7) = " + math.is_odd(7)); // true
+println("is_even(10) = " + math.is_even(10)); // true
+println("is_prime(13) = " + math.is_prime(13));// true
+
+println("gcd(36, 60) = " + math.gcd(36, 60)); // 12
+println("lcm(4, 6) = " + math.lcm(4, 6)); // 12
+
+println("next_prime(14) = " + math.next_prime(14)); // 17
+println("sum_digits(12345) = " + math.sum_digits(12345)); // 15
+println("fibonacci(10) = " + math.fibonacci(10)); // 55
+
+println("palindrome(12321) = " + math.palindrome(12321)); // true
+println("palindrome(12345) = " + math.palindrome(12345)); // false
+
+println("valid execution");

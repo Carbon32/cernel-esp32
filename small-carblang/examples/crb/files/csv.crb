@@ -1,0 +1,19 @@
+def my_table: array = text.parse_csv(
+    "mission,vehicle,agency,launchSite,description\n" +
+    "Lunar Explorer,Artemis I,NASA,Kennedy Space Center,\"First uncrewed test flight around the Moon.\"\n" +
+    "Mars Pathfinder,Delta II,NASA,Cape Canaveral,\"Mars surface exploration mission\""
+);
+
+println(my_table[0][0]);
+println(my_table[1][0]);
+println(my_table[1][2]);
+println(my_table[2][4]);
+
+my_table[1][0] = "Mars Explorer";
+my_table[1][4] = "First uncrewed test flight around Mars.\nIncludes \"deep space\" systems check.";
+
+def new_row: array[string] = ["Jupiter Probe", "Atlas V", "NASA", "Vandenberg", "Outer planet mission"];
+my_table.push(new_row);
+
+printf("\nResults:\n%\n\n", text.to_csv(my_table));
+println("valid execution");

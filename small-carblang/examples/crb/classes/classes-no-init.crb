@@ -1,0 +1,18 @@
+class Person {
+	function get_name(): string {
+		return "Name: John";
+	}
+
+	function get_age(): string {
+		return "Age: 28";
+	}
+
+	function get_job(): string {
+		return "Job: Miner";
+	}
+}
+
+def john: Person = Person();
+printf("%, %, %\n", john.get_name(), john.get_age(), john.get_job());
+
+println("valid execution");

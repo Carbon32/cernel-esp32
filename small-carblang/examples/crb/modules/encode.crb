@@ -1,0 +1,8 @@
+println(encode.base(10, 2)); // "1010"
+println(encode.base(255, 16)); // "FF"
+println(encode.base(31, 8)); // "37"
+println(encode.base(100, 10)); // "100"
+println(encode.base(-42, 2)); // "-101010"
+println(encode.base(7, 7)); // "10"
+
+println("valid execution");

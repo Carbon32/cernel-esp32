@@ -1,0 +1,18 @@
+while(def i: number = 0; i < 6) {
+	if((i + 1) == 6) { println(i + "\n"); }
+	else { println(i); }
+	i++;
+}
+
+def x: number = 0;
+def cond: bool = true;
+while(cond) {
+	if(x == 5) {
+		cond = false;
+	}
+
+	println(x);
+	x++;
+}
+
+println("valid execution");

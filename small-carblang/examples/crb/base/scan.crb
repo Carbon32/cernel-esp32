@@ -1,0 +1,7 @@
+def name: string = scan("What is your name?: ");
+println("Hello, " + name);
+
+def age: number = scan("How old are you?: ").to_number();
+println(age);
+
+println("valid execution");

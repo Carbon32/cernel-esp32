@@ -1,0 +1,6 @@
+println("random.integer(10, 50) -> " + random.integer(10, 50));
+println("random.double() -> " + random.double());
+println("random.random_color_rgb() -> " + random.rgb_color());
+println("random.random_color_hex() -> " + random.hex_color());
+
+println("valid execution");

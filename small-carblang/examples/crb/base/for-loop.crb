@@ -1,0 +1,10 @@
+for(def i: number = 0; i < 5; i++) {
+	if((i + 1) == 5) { println("i: " + i + "\n"); }
+	else { println("i: " + i); }
+}
+
+for(def j: number = 5; j < 10; j++) {
+	println("j: " + j);
+}
+
+println("valid execution");

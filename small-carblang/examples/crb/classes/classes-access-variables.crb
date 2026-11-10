@@ -1,0 +1,17 @@
+class Example {
+    function init(): Example
+    {
+        private this.name: string = "John";
+    }
+
+    function get_name(): string
+    {
+        return this.name;
+    }
+}
+
+def example: Example = Example();
+println(example.get_name());
+
+println("valid execution");
+

@@ -1,0 +1,35 @@
+def value_1: number = 5;
+def value_2: number = 2;
+
+def value_3: number = 3;
+def value_4: number = 6;
+
+def value_5: number = 9;
+def value_6: number = 9;
+
+if(value_1 > value_2) {
+	println("value_1 is bigger than value_2");
+}
+else {
+	println("value_2 is bigger than value_1");
+}
+
+if(value_3 > value_4) {
+	println("value_3 is bigger than value_4");
+}
+else {
+	println("value_4 is bigger than value_3");
+}
+
+if(value_5 == value_6) {
+	println("value_5 contains the same value as value_6");
+}
+else {
+	println("value_5 and value_6  contain different values");
+}
+
+if(!false) {
+	println("Negation works fine");
+}
+
+println("valid execution");

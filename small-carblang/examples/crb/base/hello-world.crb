@@ -1,0 +1,5 @@
+println("Hello World");
+print("Hello"); print(" World\n");
+print("Hello " + "World");
+
+println("valid execution");

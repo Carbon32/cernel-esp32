@@ -1,0 +1,16 @@
+class Example {
+    public function my_method_one(): nothing {
+        println("Public");
+        this.my_method_two();
+    }
+
+    private function my_method_two(): nothing {
+        println("Private");
+    }
+}
+
+def example: Example = Example();
+example.my_method_one();
+
+println("valid execution");
+

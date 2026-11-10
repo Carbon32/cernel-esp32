@@ -1,0 +1,29 @@
+class Person {
+	function init(name: string, age: number, job: string): Person {
+		this.name = name;
+		this.age = age;
+		this.job = job;
+	}
+
+	function get_name(): string {
+		return format("Name: %", this.name);
+	}
+
+	function get_age(): string {
+		return format("Age: %", this.age);
+	}
+
+	function get_job(): string {
+		return format("Job: %", this.job);
+	}
+}
+
+def john: Person = Person("John", 24, "Artist");
+def eric: Person = Person("Eric", 42, "Doctor");
+def peter: Person = Person("Peter", 31, "Police Officer");
+
+printf("%, %, %\n", john.get_name(), john.get_age(), john.get_job());
+printf("%, %, %\n", eric.get_name(), eric.get_age(), eric.get_job());
+printf("%, %, %\n", peter.get_name(), peter.get_age(), peter.get_job());
+
+println("valid execution");

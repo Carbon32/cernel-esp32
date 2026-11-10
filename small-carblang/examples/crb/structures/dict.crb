@@ -1,0 +1,33 @@
+def d: dict[string, any] = {
+			"first_name": "James",
+			"last_name": "Bond",
+			"age": 24,
+			"list_of_items": ["Keys", "Wallet", "Watch"]
+		};
+
+println(d); // unordered map, so the insertion order may not be the same
+printf("%\n%\n%\n%\n", d["first_name"], d["last_name"], d["age"], d["list_of_items"]);
+
+d["first_name"] = "Arnold";
+println(d + "\n"); // unordered map, so the insertion order may not be the same
+
+println("Keys: " + d.keys());
+println("Values: " + d.values());
+println("Length: " + d.length());
+println("Contains: " + d.contains("first_name"));
+println("Contains (fail): " + d.contains("middle_name"));
+
+d.remove("first_name");
+println("Removed (first_name): " + d);
+println("Pop: " + d.pop("age"));
+println("After pop: " + d);
+
+def new_d: dict = d.copy();
+new_d["test"] = 6;
+println("new_d (copy): " + new_d);
+println("d (original): " + d);
+
+new_d.clear();
+println("new_d (clear): " + new_d);
+
+println("valid execution");

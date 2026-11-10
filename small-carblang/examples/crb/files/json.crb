@@ -1,0 +1,13 @@
+// Ignore the ordering, it's because of the use of unordered dictionaries
+
+def x: any = text.parse_json("{\"mission\":\"Lunar Explorer\",\"vehicle\":\"Artemis I\",\"agency\":\"NASA\",\"launchSite\":\"Kennedy Space Center\",\"description\":\"First uncrewed test flight around the Moon.\\nIncludes \\\"deep space\\\" systems check.\",\"telemetryPath\":\"C:\\\\SpaceData\\\\missions\\\\artemis1\\\\\",\"status\":\"scheduled\"}");
+
+println(x["mission"]);
+println(x["agency"]);
+println(x["description"]);
+
+x["mission"] = "Mars Explorer";
+x["description"] = "First uncrewed test flight around Mars.\nIncludes \"deep space\" systems check.";
+
+printf("\nResults: \n%\n\n", text.to_json(x));
+println("valid execution");

@@ -1,0 +1,15 @@
+println(timing.date());
+println(timing.today());
+println(timing.leap_year(2024));
+println(timing.leap_year(2023));
+println(timing.second_to_minute(120));
+println(timing.second_to_hour(5400));
+println(timing.second_to_day(129600));
+println(timing.minute_to_second(5));
+println(timing.minute_to_hour(90));
+println(timing.minute_to_day(2880));
+println(timing.hour_to_second(2));
+println(timing.hour_to_minute(1.5));
+println(timing.hour_to_day(48));
+
+println("valid execution");

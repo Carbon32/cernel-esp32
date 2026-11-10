@@ -1,0 +1,13 @@
+function first_function(): number {
+	function second_function(): number {
+		function third_function(): number {
+			return 1;
+		}
+		return 1 + third_function();
+	}
+	return 1 + second_function();
+}
+
+println(first_function());
+
+println("valid execution");

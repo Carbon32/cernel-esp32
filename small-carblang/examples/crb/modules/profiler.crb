@@ -1,0 +1,25 @@
+profiler.start("testing_two_loops");
+
+def i;
+def j;
+
+for(i = 0; i < 25000; i++) { }
+for(j = 0; j < 25000; j++) { }
+
+profiler.end("testing_two_loops");
+printf("First run - %", profiler.report());
+
+profiler.reset();
+
+i = 0;
+j = 0;
+
+profiler.start("testing_two_loops");
+
+while(i < 50000) { i++; }
+while(j < 50000) { j++; }
+
+profiler.end("testing_two_loops");
+printf("Second run - %", profiler.report());
+
+println("valid execution");

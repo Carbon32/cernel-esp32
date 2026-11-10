@@ -1,0 +1,6 @@
+println(regex.match("cat", "The cat sat on the car."));
+println(regex.match("\\d+", "Order numbers: 123, 456, 789"));
+println(regex.match("[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}", "Contact: alice@example.com, bob@test.org"));
+println(regex.match("colou?r", "color or colour"));
+
+println("valid execution");

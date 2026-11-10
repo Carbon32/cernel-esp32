@@ -1,0 +1,16 @@
+def x: number= 4;
+def y: number = 5;
+
+def str: string = "Hello";
+def logic: bool = true;
+
+printf("a: %, b: %, c: %, d: %\n", x, y, str, logic);
+println("a + b: " + (x + y));
+println("a - b: " + (x - y));
+println("a * b: " + (x * y));
+println("a / b: " + (x / y) + "\n");
+
+println("a + c: " + (x + str));
+println("a + d: " + (x + logic.to_int()));
+
+println("valid execution");

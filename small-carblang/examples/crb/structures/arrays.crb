@@ -1,0 +1,41 @@
+def numbers: array[number] = [10, 20, 30, 40, 50];
+def words: array[string] = ["apple", "banana", "cherry"];
+def mixed: array = [1, "hello", 3.14, true];
+
+println("The array numbers is_empty: " + numbers.is_empty());
+println("The array numbers length: " + numbers.length() + "\n");
+
+numbers.push(60);
+println("After push 60: " + numbers);
+def popped: number = numbers.pop();
+println("Popped value: " + popped);
+println("After pop: " + numbers + "\n");
+
+numbers.insert(2, 25);
+println("After insert 25 at index 2: " + numbers);
+numbers.remove(3);
+println("After remove index 3: " + numbers);
+numbers.swap(0, numbers.length() - 1);
+println("After swap first and last: " + numbers + "\n");
+
+println("First element of numbers: " + numbers.first());
+println("Last element of numbers: " + numbers.last());
+println("Slice 1 to 4: " + numbers.slice(1, 4) + "\n");
+
+println("The array numbers contains 30: " + numbers.contains(30));
+println("The array numbers contains 40: " + numbers.contains(40));
+println("Index of 40: " + numbers.first_index(40));
+println("Last index of 20: " + numbers.last_index(20) + "\n");
+
+println("Sum of the array numbers: " + numbers.sum());
+println("Min: " + numbers.min() + ", Max: " + numbers.max());
+println("Average: " + numbers.average() + "\n");
+
+def copy_numbers: array[any] = numbers.copy();
+println("Copy of numbers: " + copy_numbers);
+def all_numbers: array[any] = numbers.concat([70, 80]);
+println("After concat [70, 80]: " + all_numbers);
+numbers.clear();
+println("After clear: " + numbers);
+
+println("valid execution");

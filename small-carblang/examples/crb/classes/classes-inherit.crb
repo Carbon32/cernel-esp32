@@ -1,0 +1,34 @@
+class Person {
+	function init(name: string): Person {
+		this.name = name;
+	}
+
+	function get_name(): string {
+		return "Name: " + this.name;
+	}
+
+	function get_age(): string {
+		return "Age: 28";
+	}
+
+	function get_job(): string {
+		return "Job: Miner";
+	}
+}
+
+class Worker : Person {
+    function init(name: string, work_status: bool): Worker {
+         super.init(name);
+        this.work_status = work_status;
+    }
+
+	function print_information(): nothing {
+		printf("%, %, %, Working?: %", super.get_name(), super.get_age(), super.get_job(), this.work_status);
+	}
+}
+
+def john: Worker = Worker("John", true);
+printf("%, %, %\n", john.get_name(), john.get_age(), john.get_job());
+john.print_information();
+
+println("valid execution");

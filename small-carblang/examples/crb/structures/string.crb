@@ -1,0 +1,33 @@
+def str: string = "  Hello world 123  ";
+def new_number: string = "567483";
+def another_str: string = "james is here";
+
+printf("to_number: % (type: %)\n", new_number.to_number(), new_number.to_number().type());
+println("upper: " + str.upper());
+println("lower: " + str.lower());
+println("capitalize: " + another_str.capitalize());
+println("swap: " + str.swap() + "\n");
+
+println("find \"world\": " + str.find("world"));
+println("find_last \"l\": " + str.find_last("l") + "\n");
+
+println("first: " + another_str.first());
+println("last: " + another_str.last() + "\n");
+
+println("starts_with \"  He\" (space included): " + str.starts_with("  He"));
+println("ends_with \"123  \" (space included): " + str.ends_with("123  ") + "\n");
+
+println("is_number: " + new_number.is_number());
+println("is_space: " + " ".is_space());
+println("is_all_spaces: " + "     ".is_all_spaces() + "\n");
+
+println("replace \"world\" with \"wniverse\": " + str.replace("world", "universe"));
+printf("trim: \"%\"\n", str.trim());
+println("to_array: " + another_str.to_array() + "\n");
+
+println("is_empty: " + "".is_empty());
+println("length: " + str.length());
+println("count \"l\": " + str.count("l") + "\n");
+printf("slice 2 to 5: \"%\"", str.slice(2, 5));
+
+println("valid execution");
