@@ -6,10 +6,12 @@ void help_cmd() {
   printf("print: \tdisplay some text\n");
   printf("version: \tdipslay cernel version\n");
   printf("carblang: \tstart the Carblang interactive prompt\n");
-  printf("wifi: \tshow WiFi status\n");
+  printf("wifi status: \tshow WiFi state and connected network\n");
+  printf("wifi scan: \tlist nearby WiFi networks\n");
   printf("wifi set ssid <name>: \tset WiFi SSID\n");
   printf("wifi set password <password>: \tset WiFi password\n");
-  printf("wifi connect: \tconnect and start the script server\n");
+  printf("wifi connect: \tconnect to the configured network\n");
+  printf("wifi disconnect: \tdisconnect from WiFi\n");
 }
 
 void history_cmd() {

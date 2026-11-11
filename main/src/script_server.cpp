@@ -7,6 +7,7 @@
 #include <cstring>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "esp_event.h"
 #include "esp_log.h"
@@ -18,11 +19,11 @@
 #include "freertos/task.h"
 #include "lwip/inet.h"
 #include "lwip/sockets.h"
-#include "nvs.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
 extern "C" void shell_redraw_prompt(void);
+extern "C" void shell_notify(const char *message);
 
 namespace
 {
@@ -32,14 +33,19 @@ constexpr uint16_t server_port = 3333;
 constexpr size_t max_upload_size = 24 * 1024;
 constexpr size_t max_header_size = 192;
 constexpr char unavailable[] = "not connected";
+
 EventGroupHandle_t wifi_events;
+
+// These atomic booleans are thread-safe, didn't know they existed before
 std::atomic_bool wifi_connected{false};
+std::atomic_bool wifi_connecting{false};
+std::atomic_bool wifi_started{false};
+std::atomic_bool wifi_auto_reconnect{false};
+std::atomic_bool wifi_reconfiguring{false};
 char address_text[16] = "not connected";
 char wifi_ssid[33]{};
 char wifi_password[65]{};
 bool wifi_stack_ready = false;
-bool wifi_started = false;
-bool wifi_reconfiguring = false;
 bool server_task_started = false;
 
 bool valid_upload_token()
@@ -65,43 +71,6 @@ bool init_nvs()
     return true;
 }
 
-bool save_wifi_value(const char *key, const char *value)
-{
-    if (!init_nvs())
-        return false;
-    nvs_handle_t handle;
-    esp_err_t err = nvs_open("carblang", NVS_READWRITE, &handle);
-    if (err == ESP_OK)
-    {
-        err = nvs_set_str(handle, key, value);
-        if (err == ESP_OK)
-            err = nvs_commit(handle);
-        nvs_close(handle);
-    }
-    if (err != ESP_OK)
-    {
-        ESP_LOGE(tag, "Unable to save WiFi setting: %s", esp_err_to_name(err));
-        return false;
-    }
-    return true;
-}
-
-void load_wifi_settings()
-{
-    std::strncpy(wifi_ssid, CONFIG_CARBLANG_WIFI_SSID, sizeof(wifi_ssid) - 1);
-    std::strncpy(wifi_password, CONFIG_CARBLANG_WIFI_PASSWORD, sizeof(wifi_password) - 1);
-    nvs_handle_t handle;
-    if (nvs_open("carblang", NVS_READONLY, &handle) != ESP_OK)
-        return;
-    size_t size = sizeof(wifi_ssid);
-    if (nvs_get_str(handle, "wifi_ssid", wifi_ssid, &size) != ESP_OK)
-        std::strncpy(wifi_ssid, CONFIG_CARBLANG_WIFI_SSID, sizeof(wifi_ssid) - 1);
-    size = sizeof(wifi_password);
-    if (nvs_get_str(handle, "wifi_password", wifi_password, &size) != ESP_OK)
-        std::strncpy(wifi_password, CONFIG_CARBLANG_WIFI_PASSWORD, sizeof(wifi_password) - 1);
-    nvs_close(handle);
-}
-
 bool constant_time_equal(const char *left, const char *right)
 {
     const size_t left_size = std::strlen(left);
@@ -119,25 +88,38 @@ void wifi_event_handler(void *, esp_event_base_t event_base, int32_t event_id, v
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
         wifi_reconfiguring = false;
-        esp_wifi_connect();
+        if (wifi_auto_reconnect)
+        {
+            wifi_connecting = true;
+            esp_wifi_connect();
+        }
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
         wifi_connected = false;
+        wifi_connecting = false;
         std::strncpy(address_text, unavailable, sizeof(address_text) - 1);
         address_text[sizeof(address_text) - 1] = '\0';
         xEventGroupClearBits(wifi_events, connected_bit);
-        if (wifi_started && !wifi_reconfiguring)
+        if (wifi_started && wifi_auto_reconnect && !wifi_reconfiguring)
+        {
+            wifi_connecting = true;
             esp_wifi_connect();
+        }
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         const auto *event = static_cast<const ip_event_got_ip_t *>(event_data);
         std::snprintf(address_text, sizeof(address_text), IPSTR, IP2STR(&event->ip_info.ip));
         wifi_connected = true;
+        wifi_connecting = false;
         xEventGroupSetBits(wifi_events, connected_bit);
-        ESP_LOGI(tag, "Connected; bytecode server at %s:%u", address_text, server_port);
-        shell_redraw_prompt();
+        char message[96];
+        std::snprintf(message, sizeof(message),
+            "Connected. Bytecode server at %s:%u",
+            address_text, server_port
+        );
+        shell_notify(message);
     }
 }
 
@@ -304,16 +286,27 @@ bool start_wifi_stack()
 {
     if (wifi_stack_ready)
         return true;
+
+    // To keep things clean, annoying text keeps popping
+    esp_log_level_set("wifi", ESP_LOG_WARN);
+    esp_log_level_set("esp_netif_handlers", ESP_LOG_WARN);
+
+    if (!init_nvs())
+        return false;
     esp_err_t err = esp_netif_init();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
         return false;
     err = esp_event_loop_create_default();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
         return false;
-    esp_netif_create_default_wifi_sta();
+    if (!esp_netif_create_default_wifi_sta())
+        return false;
     wifi_init_config_t init_config = WIFI_INIT_CONFIG_DEFAULT();
     err = esp_wifi_init(&init_config);
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+        return false;
+    err = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    if (err != ESP_OK)
         return false;
 
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
@@ -342,19 +335,48 @@ bool apply_wifi_credentials()
     err = esp_wifi_set_config(WIFI_IF_STA, &station_config);
     if (err != ESP_OK)
         return false;
+    wifi_auto_reconnect = true;
+    wifi_connecting = true;
     err = esp_wifi_start();
+    if (err != ESP_OK)
+    {
+        wifi_auto_reconnect = false;
+        wifi_connecting = false;
+        wifi_reconfiguring = false;
+        return false;
+    }
+    wifi_started = true;
+    return true;
+}
+
+bool start_station_for_scan()
+{
+    if (!start_wifi_stack())
+        return false;
+    if (wifi_started)
+        return true;
+    if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK)
+        return false;
+    wifi_auto_reconnect = false;
+    const esp_err_t err = esp_wifi_start();
     if (err != ESP_OK)
         return false;
     wifi_started = true;
     return true;
 }
+
+void reset_connection_status()
+{
+    wifi_connected = false;
+    wifi_connecting = false;
+    xEventGroupClearBits(wifi_events, connected_bit);
+    std::strncpy(address_text, unavailable, sizeof(address_text) - 1);
+    address_text[sizeof(address_text) - 1] = '\0';
+}
 }
 
 extern "C" void start_script_server(void)
 {
-    if (!init_nvs())
-        return;
-    load_wifi_settings();
     wifi_events = xEventGroupCreate();
     if (!wifi_events)
     {
@@ -368,14 +390,7 @@ extern "C" void start_script_server(void)
     else
         ESP_LOGE(tag, "Unable to create bytecode server task");
 
-    if (wifi_ssid[0] != '\0')
-    {
-        if (!start_wifi_stack() || !apply_wifi_credentials())
-            ESP_LOGE(tag, "Could not start WiFi, set credentials with wifi commands");
-        if (!valid_upload_token())
-            ESP_LOGW(tag, "WiFi is enabled, but uploads need a private token configured in menuconfig");
-    }
-    else if (!valid_upload_token())
+    if (!valid_upload_token())
         ESP_LOGW(tag, "Set a private upload token of 16 to 95 characters in menuconfig");
     else
         ESP_LOGI(tag, "Set WiFi with \"wifi set ssid\" and \"wifi set password\", then run \"wifi connect\"");
@@ -383,7 +398,7 @@ extern "C" void start_script_server(void)
 
 extern "C" bool carblang_wifi_set_ssid(const char *ssid)
 {
-    if (!ssid || !ssid[0] || std::strlen(ssid) > 32 || !save_wifi_value("wifi_ssid", ssid))
+    if (!ssid || !ssid[0] || std::strlen(ssid) > 32)
         return false;
     std::strcpy(wifi_ssid, ssid);
     return true;
@@ -391,8 +406,7 @@ extern "C" bool carblang_wifi_set_ssid(const char *ssid)
 
 extern "C" bool carblang_wifi_set_password(const char *password)
 {
-    if (!password || std::strlen(password) > 64 ||
-        !save_wifi_value("wifi_password", password))
+    if (!password || std::strlen(password) > 64)
         return false;
     std::strcpy(wifi_password, password);
     return true;
@@ -406,11 +420,9 @@ extern "C" bool carblang_wifi_connect(void)
         return false;
     if (wifi_started)
     {
+        wifi_auto_reconnect = false;
         wifi_reconfiguring = true;
-        xEventGroupClearBits(wifi_events, connected_bit);
-        wifi_connected = false;
-        std::strncpy(address_text, unavailable, sizeof(address_text) - 1);
-        address_text[sizeof(address_text) - 1] = '\0';
+        reset_connection_status();
         const esp_err_t stop_err = esp_wifi_stop();
         if (stop_err != ESP_OK && stop_err != ESP_ERR_WIFI_NOT_STARTED)
         {
@@ -423,9 +435,134 @@ extern "C" bool carblang_wifi_connect(void)
     }
     if (!apply_wifi_credentials())
     {
+        wifi_auto_reconnect = false;
         wifi_reconfiguring = false;
         return false;
     }
+    return true;
+}
+
+extern "C" bool carblang_wifi_disconnect(void)
+{
+    wifi_auto_reconnect = false;
+    wifi_connecting = false;
+    if (!wifi_started)
+    {
+        reset_connection_status();
+        return true;
+    }
+    const esp_err_t err = esp_wifi_stop();
+    if (err != ESP_OK && err != ESP_ERR_WIFI_NOT_STARTED)
+    {
+        ESP_LOGE(tag, "Could not disconnect WiFi: %s", esp_err_to_name(err));
+        return false;
+    }
+    wifi_started = false;
+    reset_connection_status();
+    return true;
+}
+
+extern "C" void carblang_wifi_status(void)
+{
+    if (wifi_connected)
+    {
+        wifi_ap_record_t ap{};
+        if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK)
+            std::printf("WiFi: connected\nConnected SSID: %.*s\n",
+                        static_cast<int>(sizeof(ap.ssid)),
+                        reinterpret_cast<const char *>(ap.ssid));
+        else
+            std::printf("WiFi: connected\n");
+        if (wifi_ssid[0])
+            std::printf("Configured SSID: %s\n", wifi_ssid);
+        std::printf("IP address: %s\n", address_text);
+        if (!server_task_started)
+            std::printf("Upload server: unavailable (task did not start)\n");
+        else if (!valid_upload_token())
+            std::printf("Upload server: token not configured\n");
+        else
+            std::printf("Upload server: %s:3333\n", address_text);
+        return;
+    }
+
+    if (wifi_connecting)
+    {
+        std::printf("WiFi: connecting/retrying\nSSID: %s\n", wifi_ssid);
+        return;
+    }
+    if (wifi_started)
+    {
+        std::printf("WiFi: disconnected (station is running)\n");
+        if (wifi_ssid[0])
+            std::printf("Configured SSID: %s\n", wifi_ssid);
+        return;
+    }
+    std::printf("WiFi: off\n");
+    if (wifi_ssid[0])
+        std::printf("Configured SSID: %s\n", wifi_ssid);
+    else
+        std::printf("No SSID configured, use \"wifi set ssid <ssid>\"\n");
+}
+
+extern "C" bool carblang_wifi_scan(void)
+{
+    if (!start_station_for_scan())
+    {
+        std::printf("Could not start WiFi scan.\n");
+        return false;
+    }
+
+    wifi_scan_config_t config{};
+    config.show_hidden = true;
+    const esp_err_t scan_err = esp_wifi_scan_start(&config, true);
+    if (scan_err != ESP_OK)
+    {
+        std::printf("WiFi scan failed: %s\n", esp_err_to_name(scan_err));
+        return false;
+    }
+
+    uint16_t ap_count = 0;
+    esp_err_t err = esp_wifi_scan_get_ap_num(&ap_count);
+    if (err != ESP_OK)
+    {
+        std::printf("Could not get scan results: %s\n", esp_err_to_name(err));
+        return false;
+    }
+    if (ap_count == 0)
+    {
+        std::printf("No WiFi networks found.\n");
+        return true;
+    }
+
+    auto *records = static_cast<wifi_ap_record_t *>(
+        std::calloc(ap_count, sizeof(wifi_ap_record_t)));
+    if (!records)
+    {
+        std::printf("Not enough memory to list WiFi networks.\n");
+        return false;
+    }
+    uint16_t returned_count = ap_count;
+    err = esp_wifi_scan_get_ap_records(&returned_count, records);
+    if (err != ESP_OK)
+    {
+        std::free(records);
+        std::printf("Could not read scan results: %s\n", esp_err_to_name(err));
+        return false;
+    }
+
+    std::printf("Nearby WiFi networks: %u\n", static_cast<unsigned>(returned_count));
+    for (uint16_t i = 0; i < returned_count; ++i)
+    {
+        const char *ssid = reinterpret_cast<const char *>(records[i].ssid);
+        if (records[i].ssid[0] == '\0')
+            ssid = "(hidden)";
+        std::printf("%u. %-32.32s  RSSI %d dBm  channel %u  auth %u\n",
+                    static_cast<unsigned>(i + 1), ssid,
+                    static_cast<int>(records[i].rssi),
+                    static_cast<unsigned>(records[i].primary),
+                    static_cast<unsigned>(records[i].authmode));
+    }
+    std::free(records);
     return true;
 }
 

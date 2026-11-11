@@ -1,17 +1,5 @@
 menu "Carblang script server"
 
-config CARBLANG_WIFI_SSID
-    string "WiFi station SSID"
-    default "YOUR_WIFI_SSID"
-    help
-        SSID of the WiFi network the ESP32 should join.
-
-config CARBLANG_WIFI_PASSWORD
-    string "WiFi station password"
-    default "YOUR_WIFI_PASSWORD"
-    help
-        Password for the WiFi station network.
-
 config CARBLANG_UPLOAD_TOKEN
     string "Bytecode upload token"
     default "default_carblang_token"

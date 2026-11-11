@@ -131,42 +131,63 @@ void process_command(const char *input) {
   }
 
   else if (strcmp(command, "wifi") == 0) {
-    if (argc == 1 && script_server_is_connected()) {
-      printf("Carblang upload server listening on %s:3333\n",
-             script_server_ip());
-      printf("Send a compiled .crbc file with tools/send_script.py\n");
+    if (argc == 1 || (argc == 2 && strcmp(argv[1], "status") == 0)) {
+      carblang_wifi_status();
     }
 
-    else if (argc == 1) {
-      printf("WiFi is not connected. Set SSID and password, then run \"wifi "
-             "connect\".\n");
-    } else if (argc >= 3 && strcmp(argv[1], "set") == 0 &&
-               strcmp(argv[2], "ssid") == 0) {
+    else if (argc >= 3 && strcmp(argv[1], "set") == 0 &&
+             strcmp(argv[2], "ssid") == 0) {
       char ssid[33];
       if (!extract_wifi_value(input, "ssid", ssid, sizeof(ssid)) ||
           !carblang_wifi_set_ssid(ssid)) {
-        printf("Could not save SSID. Use: wifi set ssid <name>\n");
-      } else {
-        printf("WiFi SSID saved.\n");
+        printf("Could not set SSID. Use: wifi set ssid <name>\n");
       }
-    } else if (argc >= 3 && strcmp(argv[1], "set") == 0 &&
-               strcmp(argv[2], "password") == 0) {
+
+      else {
+        printf("WiFi SSID set in RAM. It will be cleared on reboot.\n");
+      }
+    }
+
+    else if (argc >= 3 && strcmp(argv[1], "set") == 0 &&
+             strcmp(argv[2], "password") == 0) {
       char password[65];
       if (!extract_wifi_value(input, "password", password, sizeof(password)) ||
           !carblang_wifi_set_password(password)) {
-        printf("Could not save password. Use: wifi set password <password>\n");
-      } else {
-        printf("WiFi password saved.\n");
+        printf("Could not set password. Use: wifi set password <password>\n");
       }
-    } else if (argc == 2 && strcmp(argv[1], "connect") == 0) {
+
+      else {
+        printf("WiFi password set in RAM. It will be cleared on reboot.\n");
+      }
+    }
+
+    else if (argc == 2 && strcmp(argv[1], "scan") == 0) {
+      carblang_wifi_scan();
+    }
+
+    else if (argc == 2 && strcmp(argv[1], "connect") == 0) {
       if (carblang_wifi_connect()) {
-        printf("Connecting to WiFi; use \"wifi\" to check the IP address.\n");
-      } else {
+        printf("Connecting to WiFi; use \"wifi status\" to check the state.\n");
+      }
+
+      else {
         printf("Could not start WiFi. Set the SSID and password first.\n");
       }
-    } else {
-      printf("Use: wifi | wifi set ssid <name> | wifi set password <password> "
-             "| wifi connect\n");
+    }
+
+    else if (argc == 2 && strcmp(argv[1], "disconnect") == 0) {
+      if (carblang_wifi_disconnect()) {
+        printf("WiFi disconnected. Credentials remain in RAM until reboot.\n");
+      }
+
+      else {
+        printf("Could not disconnect WiFi.\n");
+      }
+    }
+
+    else {
+      printf("Use: wifi status | wifi scan | wifi set ssid <name> | "
+             "wifi set password <password> | wifi connect | wifi disconnect\n");
     }
   }
 
@@ -255,4 +276,20 @@ void shell_redraw_prompt(void) {
   uart_write_bytes(UART_NUM_0, "\r\n", 2);
   const char prompt[] = "cernel@cernel> ";
   uart_write_bytes(UART_NUM_0, prompt, sizeof(prompt) - 1);
+}
+
+void shell_notify(const char *message) {
+  if (message == NULL) {
+    return;
+  }
+
+  char output[160];
+  const int length =
+      snprintf(output, sizeof(output), "\r\n%s\r\ncernel@cernel> ", message);
+
+  if (length > 0) {
+    const size_t output_size =
+        (size_t)length < sizeof(output) ? (size_t)length : sizeof(output) - 1;
+    uart_write_bytes(UART_NUM_0, output, output_size);
+  }
 }

@@ -28,8 +28,10 @@ void shell_loop();
 // This mix of C and C++ is too much sometimes
 #ifdef __cplusplus
     extern "C" void shell_redraw_prompt(void);
+    extern "C" void shell_notify(const char *message);
 #else
     void shell_redraw_prompt(void);
+    void shell_notify(const char *message);
 #endif
 
 void help_cmd();
@@ -45,3 +47,6 @@ const char *script_server_ip(void);
 bool carblang_wifi_set_ssid(const char *ssid);
 bool carblang_wifi_set_password(const char *password);
 bool carblang_wifi_connect(void);
+bool carblang_wifi_disconnect(void);
+void carblang_wifi_status(void);
+bool carblang_wifi_scan(void);
