@@ -128,9 +128,8 @@
             prompt = value_get<std::string>(args[0]);                       \
         }                                                                   \
                                                                             \
-        std::cout << prompt;                                                \
-        std::string line;                                                   \
-        std::getline(std::cin, line);                                       \
+        write_output(prompt);                                               \
+        std::string line = read_input(prompt);                              \
                                                                             \
         push(line);                                                         \
         break;                                                              \

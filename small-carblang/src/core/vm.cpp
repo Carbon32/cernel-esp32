@@ -2,6 +2,7 @@
 
 #ifdef ESP_PLATFORM
 extern "C" void carblang_uart_write(const char *data, size_t size);
+extern "C" int carblang_uart_read_char(void);
 extern "C" void carblang_led_on(void);
 extern "C" void carblang_led_off(void);
 extern "C" void carblang_led_toggle(void);
@@ -2219,6 +2220,55 @@ void VM::write_output(const std::string &text)
         carblang_uart_write(text.data(), text.size());
 #else
     std::cout << text;
+#endif
+}
+
+std::string VM::read_input(const std::string &prompt)
+{
+    (void)prompt;
+#ifdef ESP_PLATFORM
+    // Well, leave this part for the shell interactions, stuff turns invisible if you don't do it this way
+    std::string line;
+    static bool skip_lf = false;
+    for (;;)
+    {
+        const int ch = carblang_uart_read_char();
+        if (ch < 0)
+            return line;
+        if (skip_lf && ch == '\n')
+        {
+            skip_lf = false;
+            continue;
+        }
+        skip_lf = false;
+        if (ch == '\r' || ch == '\n')
+        {
+            if (ch == '\r')
+                skip_lf = true;
+            write_output("\r\n");
+            return line;
+        }
+        if ((ch == '\b' || ch == 127) && !line.empty())
+        {
+            size_t erase_at = line.size() - 1;
+            while (erase_at > 0 &&
+                   (static_cast<unsigned char>(line[erase_at]) & 0xc0) == 0x80)
+                --erase_at;
+            line.erase(erase_at);
+            write_output("\b \b");
+        }
+        else if (ch >= 32 && ch != 127)
+        {
+            line.push_back(static_cast<char>(ch));
+            const char echo = static_cast<char>(ch);
+            write_output(std::string(1, echo));
+        }
+    }
+#else
+    std::string line;
+    std::cout << std::flush;
+    std::getline(std::cin, line);
+    return line;
 #endif
 }
 

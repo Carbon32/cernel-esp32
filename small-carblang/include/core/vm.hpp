@@ -59,4 +59,5 @@ private:
     std::string csv_stringify(const Value &value);
     void dump_state(const char *where);
     Value read_constant();
+    std::string read_input(const std::string &prompt);
 };
